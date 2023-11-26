@@ -29,9 +29,12 @@ async function run() {
           await client.connect();
 
           const userCollection = client.db("contestDB").collection("users");
-          const contextCollection = client
+          const allContextCollection = client
                .db("contestDB")
                .collection("allContexts");
+          const contextCollection = client
+               .db("contestDB")
+               .collection("createContext");
 
           // jwt api
 
@@ -81,8 +84,14 @@ async function run() {
 
           // user api
 
-          app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
+          app.get("/users", async (req, res) => {
                const result = await userCollection.find().toArray();
+               res.send(result);
+          });
+          app.get("/users/:id", async (req, res) => {
+               const id = req.params.id;
+               const query = { _id: new ObjectId(id) };
+               result = await userCollection.findOne(query);
                res.send(result);
           });
           app.get("/users/admin/:email", verifyToken, async (req, res) => {
@@ -125,17 +134,17 @@ async function run() {
                const result = await userCollection.insertOne(user);
                res.send(result);
           });
-           // app.delete(
-          //      "/users/:id",
-          //      verifyToken,
-          //      verifyAdmin,
-          //      async (req, res) => {
-          //           const id = req.params.id;
-          //           const query = { _id: new ObjectId(id) };
-          //           const result = await userCollection.deleteOne(query);
-          //           res.send(result);
-          //      }
-          // );
+          app.delete(
+               "/users/:id",
+               verifyToken,
+               verifyAdmin,
+               async (req, res) => {
+                    const id = req.params.id;
+                    const query = { _id: new ObjectId(id) };
+                    const result = await userCollection.deleteOne(query);
+                    res.send(result);
+               }
+          );
 
           // app.patch("/users/admin/:id",verifyToken,verifyAdmin, async (req, res) => {
           //      const id = req.params.id;
@@ -174,20 +183,95 @@ async function run() {
                     res.send(result);
                }
           );
+          app.patch("/users/:id", async (req, res) => {
+               const id = req.params.id;
+               const updatedName = req.body;
+               const filter = { _id: new ObjectId(id) };
+               console.log(updatedName);
+               //  const options = { upsert: true };
+               const updatedDoc = {
+                    $set: {
+                         name: updatedName.name,
+                    },
+               };
+               const result = await userCollection.updateOne(
+                    filter,
+                    updatedDoc
+               );
+               res.send(result);
+          });
 
           // create connext api
-          app.get("/allContexts", async (req, res) => {
-               // const email = req.query.email;
-               // const query = { email: email };
+          // app.get("/allContexts",verifyToken, async (req, res) => {
+          //      // const email = req.query.email;
+          //      // const query = { email: email };
+          //      const result = await allContextCollection.find().toArray();
+          //      res.send(result);
+          // });
+
+          app.get("/createContext", async (req, res) => {
                const result = await contextCollection.find().toArray();
                res.send(result);
           });
-          app.post("/allContexts", async (req, res) => {
+          app.get("/createContext/:id", async (req, res) => {
+               const id = req.params.id;
+               const query = { _id: new ObjectId(id) };
+               result = await contextCollection.findOne(query);
+               res.send(result);
+          });
+          app.post("/createContext", verifyToken, async (req, res) => {
                const context = req.body;
                console.log(context);
                const result = await contextCollection.insertOne(context);
                res.send(result);
           });
+          app.put("/createContext/:id", async (req, res) => {
+               const id = req.params.id;
+               const updateFoodInfo = req.body;
+               const filter = { _id: new ObjectId(id) };
+               const options = { upsert: true };
+               const updatedItems = {
+                    name: updateFoodInfo.name,
+                    tag: updateFoodInfo.tag,
+                    price: updateFoodInfo.price,
+                    prizeMoney: updateFoodInfo.prizeMoney,
+                    deadLine: updateFoodInfo.deadLine,
+                    description: updateFoodInfo.description,
+                    instruction: updateFoodInfo.instruction,
+                    image: updateFoodInfo.image
+               };
+               console.log(updatedItems);
+               const result = await contextCollection.updateOne(
+                    filter,
+                    { $set: { ...updatedItems } },
+                    options
+               );
+               res.send(result);
+          });
+          app.patch("/createContext/:id", verifyToken, async (req, res) => {
+               const id = req.params.id;
+               const userStatus = req.body;
+               const filter = { _id: new ObjectId(id) };
+               const updateDoc = {
+                    $set: {
+                         status: userStatus.status,
+                    },
+               };
+               console.log(userStatus);
+               const result = await contextCollection.updateOne(
+                    filter,
+                    updateDoc
+               );
+               res.send(result);
+          });
+          app.delete("/createContext/:id", verifyToken, async (req, res) => {
+               const id = req.params.id;
+               const query = { _id: new ObjectId(id) };
+               const result = await contextCollection.deleteOne(query);
+               res.send(result);
+          });
+        
+
           // Send a ping to confirm a successful connection
           await client.db("admin").command({ ping: 1 });
           console.log(
