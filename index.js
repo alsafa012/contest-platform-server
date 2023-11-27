@@ -39,6 +39,9 @@ async function run() {
           const registerCollection = client
                .db("contestDB")
                .collection("registerUser");
+          const BestCreatorCollection = client
+               .db("contestDB")
+               .collection("bestCreator");
 
           // jwt api
 
@@ -231,18 +234,19 @@ async function run() {
           });
           app.put("/createContext/:id", async (req, res) => {
                const id = req.params.id;
-               const updateFoodInfo = req.body;
+               const updatedInfo = req.body;
                const filter = { _id: new ObjectId(id) };
                const options = { upsert: true };
                const updatedItems = {
-                    name: updateFoodInfo.name,
-                    tag: updateFoodInfo.tag,
-                    price: updateFoodInfo.price,
-                    prizeMoney: updateFoodInfo.prizeMoney,
-                    deadLine: updateFoodInfo.deadLine,
-                    description: updateFoodInfo.description,
-                    instruction: updateFoodInfo.instruction,
-                    image: updateFoodInfo.image
+                    name: updatedInfo.name,
+                    tag: updatedInfo.tag,
+                    price: updatedInfo.price,
+                    prizeMoney: updatedInfo.prizeMoney,
+                    deadLine: updatedInfo.deadLine,
+                    description: updatedInfo.description,
+                    instruction: updatedInfo.instruction,
+                    image: updatedInfo.image,
+                    // participants: updatedInfo.finalParticipants
                };
                console.log(updatedItems);
                const result = await contextCollection.updateOne(
@@ -255,10 +259,12 @@ async function run() {
           app.patch("/createContext/:id", verifyToken, async (req, res) => {
                const id = req.params.id;
                const userStatus = req.body;
+               console.log(userStatus);
                const filter = { _id: new ObjectId(id) };
                const updateDoc = {
                     $set: {
-                         status: userStatus.status,
+                         status: userStatus?.status,
+                         participants:userStatus?.finalParticipants,
                     },
                };
                console.log(userStatus);
@@ -282,14 +288,8 @@ async function run() {
                console.log(amount,'amount');
                const paymentIntent = await stripe.paymentIntents.create({
                     amount:amount,
-                    // amount: calculateOrderAmount(items),
                     currency: "usd",
                     payment_method_types: ['card']
-
-                    // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
-                    // automatic_payment_methods: {
-                    //   enabled: true,
-                    // },
                   });
                   res.send({
                     clientSecret : paymentIntent.client_secret,
@@ -308,6 +308,31 @@ async function run() {
                const result = await registerCollection.insertOne(registerUser);
                res.send(result);
           })
+          app.patch("/registerUser/:id", async (req, res) => {
+               const id = req.params.id;
+               const filter = { _id: new ObjectId(id) };
+               const updateWinnerUser = req.body;
+               console.log(updateWinnerUser);
+               const updateDoc = {
+                    $set: {
+                         status: updateWinnerUser?.confirm,
+                    },
+               };
+               console.log(updateWinnerUser);
+               const result = await registerCollection.updateOne(
+                    filter,
+                    updateDoc
+               );
+               res.send(result);
+          });
+         
+           
+
+          // bestCreator api
+          app.get("/bestCreator", async (req, res) => {
+               const result = await BestCreatorCollection.find().toArray();
+               res.send(result);
+          });
 
 
         
