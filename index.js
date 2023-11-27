@@ -4,6 +4,7 @@ const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SEC)
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -35,6 +36,9 @@ async function run() {
           const contextCollection = client
                .db("contestDB")
                .collection("createContext");
+          const registerCollection = client
+               .db("contestDB")
+               .collection("registerUser");
 
           // jwt api
 
@@ -270,6 +274,42 @@ async function run() {
                const result = await contextCollection.deleteOne(query);
                res.send(result);
           });
+
+          // payment methods
+          app.post('/create-payment-intent',async(req, res)=>{
+               const {price} = req.body;
+               const amount = parseInt(price * 100);
+               console.log(amount,'amount');
+               const paymentIntent = await stripe.paymentIntents.create({
+                    amount:amount,
+                    // amount: calculateOrderAmount(items),
+                    currency: "usd",
+                    payment_method_types: ['card']
+
+                    // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+                    // automatic_payment_methods: {
+                    //   enabled: true,
+                    // },
+                  });
+                  res.send({
+                    clientSecret : paymentIntent.client_secret,
+                  })
+          });
+
+          // registerCollections api
+
+          app.get("/registerUser", async (req, res) => {
+               const result = await registerCollection.find().toArray();
+               res.send(result);
+          });
+          app.post('/registerUser',async (req, res) => {
+               const registerUser=req.body;
+               console.log(registerUser);
+               const result = await registerCollection.insertOne(registerUser);
+               res.send(result);
+          })
+
+
         
 
           // Send a ping to confirm a successful connection
