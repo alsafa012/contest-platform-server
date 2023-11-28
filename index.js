@@ -308,6 +308,23 @@ async function run() {
                const result = await registerCollection.insertOne(registerUser);
                res.send(result);
           })
+          app.put("/registerUser/:id", async (req, res) => {
+               const id = req.params.id;
+               const filter = { _id: new ObjectId(id) };
+               const updatedInfo = req.body;
+               const options = { upsert: true };
+               const updatedItems = {
+                    task: updatedInfo.task,
+                   
+               };
+               console.log(updatedItems);
+               const result = await registerCollection.updateOne(
+                    filter,
+                    { $set: { ...updatedItems } },
+                    options
+               );
+               res.send(result);
+          });
           app.patch("/registerUser/:id", async (req, res) => {
                const id = req.params.id;
                const filter = { _id: new ObjectId(id) };
