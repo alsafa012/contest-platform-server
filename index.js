@@ -372,4 +372,5 @@ app.get("/", (req, res) => {
 
 app.listen(port, () => {
      console.log(`ContestHub server listening on port ${port}`);
+     // console.log(`ContestHub server listening on port ${port}`);
 });
